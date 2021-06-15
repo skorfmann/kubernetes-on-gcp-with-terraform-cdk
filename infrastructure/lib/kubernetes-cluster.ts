@@ -10,8 +10,7 @@ import { Resource } from "../.gen/providers/null/resource";
 import {
   ContainerCluster,
   ContainerNodePool,
-  DataGoogleContainerCluster,
-  ServiceAccount,
+  DataGoogleContainerCluster
 } from "@cdktf/provider-google";
 import { KubernetesService } from './kubernetes-service'
 import { GoogleServiceAccount } from './google-service-account';

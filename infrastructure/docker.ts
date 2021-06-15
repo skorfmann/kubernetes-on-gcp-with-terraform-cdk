@@ -4,10 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { VERSION, DOCKER_ORG } from "./config";
 import { Resource } from "./.gen/providers/null/resource";
-import {
-  DataGoogleServiceAccount,
-  ServiceAccountKey,
-} from "@cdktf/provider-google";
+import { GoogleContainerRegistry } from './lib';
 
 export function buildAndPushImage(
   scope: Construct,
@@ -56,17 +53,13 @@ export function buildAndPushImage(
     path: p,
   });
 
-  const sa = new DataGoogleServiceAccount(scope, _("sa"), {
-    accountId: "registry-push",
-  });
-
-  const key = new ServiceAccountKey(scope, _("sa-key"), {
-    serviceAccountId: sa.email,
-  });
+  const key = GoogleContainerRegistry.from(scope).addKey()
 
   const version = getVersion();
 
-  const tag = `gcr.io/${DOCKER_ORG}/${imageName}:${version}-${content.assetHash}`;
+  const tag = `gcr.io/${DOCKER_ORG}/${imageName}:${version}-${content.assetHash}`; // move this into GoogleContainerRegistry ; e.g. registry.imageUri(name, tag)
+
+  // would it make sense to have something like registry.buildAndPush(imageName, tag, dockerfile, path)
   const image = new Resource(scope, _("image"), {
     triggers: {
       tag,

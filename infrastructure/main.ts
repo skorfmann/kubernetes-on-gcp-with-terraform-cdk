@@ -34,6 +34,9 @@ class BaselineLayer extends TerraformStack {
     });
 
     const cluster = KubernetesCluster.onCluster(this, CLUSTER_NAME);
+
+    // perhaps have a curated list of charts which can
+    // be installed in the cluster? certManager, grafana, ...
     cluster.installHelmChart({
       name: "cert-manager",
       repository: "https://charts.jetstack.io",
@@ -64,6 +67,20 @@ class ApplicationLayer extends TerraformStack {
     });
 
     const servicePath = path.resolve(__dirname, "../services");
+
+    // this part in particular is still hard to grasp
+    // for one part, I think interfaces rather than positional
+    // args would make it easier to read.
+    // However, there's probably an abstraction for Service missing,
+    // to encapsulate a bunch of these informations
+    // e.g. something along the lines of this:
+    //
+    // fs.readdirSync(servicePath).forEach((p) => {
+    //   new Service(this, p, {
+    //     cluster,
+    //     namespace: ns
+    //   })
+    // }
     fs.readdirSync(servicePath).forEach((p) => {
       const [tag, image] = buildAndPushImage(
         this,

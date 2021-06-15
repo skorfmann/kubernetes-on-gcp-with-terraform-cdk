@@ -5,11 +5,15 @@ import {
   ServiceAccount,
 } from "@cdktf/provider-google";
 
+export interface IGoogleServiceAccount {
+  readonly email: string;
+}
+
 export interface GoogleServiceAccountConfig {
   readonly role: string;
 }
 
-export class GoogleServiceAccount extends Resource {
+export class GoogleServiceAccount extends Resource implements IGoogleServiceAccount {
   public readonly account: ServiceAccount;
   public readonly email: string;
 
@@ -18,7 +22,7 @@ export class GoogleServiceAccount extends Resource {
 
     this.account = new ServiceAccount(this, "registry-push", {
       accountId: name,
-      displayName: name,
+      displayName: name, // CamelCase this :)
     });
 
     this.email = this.account.email;
