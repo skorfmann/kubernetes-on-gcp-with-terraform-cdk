@@ -11,8 +11,6 @@ import { TerraformGoogleModulesKubernetesEngineGoogleModulesAuth as GKEAuth } fr
 import { HelmProvider } from "./.gen/providers/helm/helm-provider";
 import { Release, ReleaseConfig } from "./.gen/providers/helm/release";
 import { Resource } from "./.gen/providers/null/resource";
-import { Deployment } from "./.gen/providers/kubernetes/deployment";
-import { Service } from "./.gen/providers/kubernetes/service";
 import {
   ContainerCluster,
   ContainerNodePool,
@@ -22,6 +20,7 @@ import {
   ProjectIamMember,
   ServiceAccount,
 } from "@cdktf/provider-google";
+import { KubernetesService } from './lib/kubernetes-service'
 
 // https://developers.google.com/identity/protocols/oauth2/scopes
 const oauthScopes = [
@@ -33,79 +32,6 @@ const oauthScopes = [
   "https://www.googleapis.com/auth/trace.append",
   "https://www.googleapis.com/auth/cloud-platform",
 ];
-
-class KubernetesService extends Resource {
-  constructor(
-    scope: Construct,
-    namespace: Namespace,
-    name: string,
-    image: string,
-    labels: Record<string, string>,
-    dependencies: ITerraformDependable[]
-  ) {
-    super(scope, name);
-    const deployment = new Deployment(scope, `${image}-deployment`, {
-      dependsOn: dependencies,
-      metadata: [
-        {
-          name,
-          labels,
-          namespace: namespace.id,
-        },
-      ],
-      spec: [
-        {
-          selector: [
-            {
-              matchLabels: labels,
-            },
-          ],
-          template: [
-            {
-              metadata: [
-                {
-                  labels,
-                },
-              ],
-              spec: [
-                {
-                  container: [
-                    {
-                      name: "application",
-                      image: image,
-                      port: [{ containerPort: 80 }],
-                      livenessProbe: [
-                        {
-                          httpGet: [
-                            {
-                              path: "/health",
-                              port: "80",
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-
-    new Service(scope, `${image}-service`, {
-      dependsOn: [deployment],
-      metadata: [{ name: image, namespace: namespace.id }],
-      spec: [
-        {
-          selector: { application: image },
-          port: [{ port: 80 }],
-        },
-      ],
-    });
-  }
-}
 
 class KubernetesCluster extends Resource {
   private sa: ServiceAccount;
@@ -212,11 +138,13 @@ class KubernetesCluster extends Resource {
       ) {
         return new KubernetesService(
           scope,
-          namespace,
           name,
-          image,
-          labels,
-          dependencies
+          {
+            image,
+            labels,
+            dependencies,
+            namespaceId: namespace.id,
+          }
         );
       },
     };
